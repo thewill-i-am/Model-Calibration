@@ -4,7 +4,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from pandas import DataFrame
 from sklearn.neighbors import KNeighborsClassifier
-from sklearn.model_selection import train_test_split
+from sklearn.model_selection import train_test_split, cross_val_score
 from sklearn.model_selection import KFold
 from sklearn.metrics import confusion_matrix
 from matplotlib import colors as mcolors
@@ -179,7 +179,7 @@ class Analisis_Predictivo:
                 error_folds.append((1 - self.modelo.score(self.x.iloc[test], self.y[test].ravel())))
             error_cv.append(np.mean(error_folds))
 
-        plt.figure(figsize=(15, 10))
+        plt.figure(figsize=(25, 15))
         plt.plot(error_tt, 'o-', lw=2)
         plt.plot(error_cv, 'o-', lw=2)
         plt.xlabel("Número de Iteración", fontsize=15)
@@ -190,3 +190,26 @@ class Analisis_Predictivo:
                    fontsize=15)
 
 
+class Graficar:
+    def __init__(self, models, label, color,  x, y):
+        self.__color = color
+        self.__label = label
+        self.__models = models
+        self.__porcentajes = []
+        self.__x = x
+        self.__y = y
+
+    def getPorcentajeKFoald(self):
+        for model in self.__models:
+            instancia_kfold = KFold(n_splits=10,shuffle=True)
+            crossScore = cross_val_score(model, self.__x, self.__y, cv=instancia_kfold)
+            self.__porcentajes.append(crossScore.mean())
+
+    def barras(self):
+        self.getPorcentajeKFoald()
+        plt.figure(figsize=(13,9))
+        barras = self.__label
+        y_pos = np.arange(len(barras))
+        plt.bar(y_pos, self.__porcentajes, color=self.__color)
+        plt.xticks(y_pos, barras)
+        plt.show()

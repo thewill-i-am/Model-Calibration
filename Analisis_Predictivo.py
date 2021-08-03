@@ -3,6 +3,7 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 from pandas import DataFrame
+from sklearn.ensemble import AdaBoostClassifier
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.model_selection import train_test_split, cross_val_score
 from sklearn.model_selection import KFold
@@ -37,6 +38,18 @@ class Analisis_Predictivo:
         if modelo != None:
             self.train_size = train_size
             self._training_testing()
+
+    def training_testing_con_reja_corte(self, corte=None, model=None):
+        model.fit(self.X_train, self.y_train.ravel())
+        probabilidad = model.predict_proba(self.X_test)[:, 1]
+        for c in corte:
+            print("===========================")
+            print("Probabilidad de Corte: ", c)
+            prediccion = np.where(probabilidad > c, "Si", "No")
+            MC = confusion_matrix(self.y_test, prediccion)
+            indices = self.indices_general(MC, list(np.unique(self.y)))
+            for k in indices:
+                print("\n%s:\n%s" % (k, str(indices[k])))
 
     def _training_testing(self):
         if len(self.predictoras) == 0:
@@ -191,7 +204,7 @@ class Analisis_Predictivo:
 
 
 class Graficar:
-    def __init__(self, models, label, color,  x, y):
+    def __init__(self, models, label, color, x, y):
         self.__color = color
         self.__label = label
         self.__models = models
@@ -201,13 +214,13 @@ class Graficar:
 
     def getPorcentajeKFoald(self):
         for model in self.__models:
-            instancia_kfold = KFold(n_splits=10,shuffle=True)
+            instancia_kfold = KFold(n_splits=10, shuffle=True)
             crossScore = cross_val_score(model, self.__x, self.__y, cv=instancia_kfold)
             self.__porcentajes.append(crossScore.mean())
 
     def barras(self):
         self.getPorcentajeKFoald()
-        plt.figure(figsize=(13,9))
+        plt.figure(figsize=(13, 9))
         barras = self.__label
         y_pos = np.arange(len(barras))
         plt.bar(y_pos, self.__porcentajes, color=self.__color)

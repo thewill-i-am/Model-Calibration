@@ -7,7 +7,7 @@ from sklearn.ensemble import AdaBoostClassifier
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.model_selection import train_test_split, cross_val_score
 from sklearn.model_selection import KFold
-from sklearn.metrics import confusion_matrix
+from sklearn.metrics import confusion_matrix, roc_curve, roc_auc_score
 from matplotlib import colors as mcolors
 
 
@@ -226,3 +226,49 @@ class Graficar:
         plt.bar(y_pos, self.__porcentajes, color=self.__color)
         plt.xticks(y_pos, barras)
         plt.show()
+
+class GraficarROC:
+    def __init__(self, models, label, color, x, y, predecir, train_size=0.80):
+        self.__color = color
+        self.__label = label
+        self.__models = models
+        self.__porcentajes = []
+        self.__x = x
+        self.__y = y
+        self.predecir = predecir
+        self.predictoras=[]
+        self.train_size = train_size
+
+    def _training_testing(self):
+        train_test = train_test_split(self.__x, self.__y, train_size=self.train_size,
+                                      random_state=None)
+        self.X_train, self.X_test, self.y_train, self.y_test = train_test
+
+    def plotROC(self, real, scores, pos_label=1, color=None, label=None, ax=None):
+        if ax == None:
+            fig, ax = plt.subplots(1, 1, figsize=(8, 5), dpi=200)
+        fp_r, tp_r, umbral = roc_curve(real, scores, pos_label=pos_label)
+        area = round(roc_auc_score(real, scores), 3)
+        if label != None:
+            label = "{} (AUC: {})".format(label, area)
+        else:
+            label = "AUC: {}".format(area)
+        ax.plot(fp_r, tp_r, lw=1, color=color, label=label)
+        ax.plot([0, 1], [0, 1], lw=1, color="black", linestyle='dashed')
+        ax.set_xlabel("Tasa de Falsos Positivos")
+        ax.set_ylabel("Tasa de Verdaderos Positivos")
+        ax.set_title("Curva ROC")
+        ax.legend(loc="lower right")
+
+    def graficar(self):
+        self._training_testing()
+        fig, ax = plt.subplots(1, 1, figsize=(8, 5), dpi=300)
+        i = 0
+        for model in self.__models:
+            model.fit(self.X_train, self.y_train)
+            scores = model.predict_proba(self.X_test)
+            self.plotROC(self.y_test, scores[:, 1], pos_label="Si", color=self.__color[i], ax=ax, label=self.__label[i])
+            i = i + 1
+
+
+
